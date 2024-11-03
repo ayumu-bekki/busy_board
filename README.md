@@ -35,6 +35,4 @@ https://github.com/ayumu-bekki/busy_board/blob/develop/main/seg7_led.h
 
 株式会社秋月電子通商の赤色7セグメントLEDシリアルドライバーモジュール(https://akizukidenshi.com/catalog/g/g118241/)を動作させるためのクラスです。
 ただし、今回は1桁のみの利用だったため、複数桁表示については未実装
-- 
-
 
