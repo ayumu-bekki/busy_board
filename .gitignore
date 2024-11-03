@@ -1,0 +1,7 @@
+# BusyBoard
+
+/sdkconfig.old
+/build/
+
+.DS_Store
+

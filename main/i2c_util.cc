@@ -1,0 +1,34 @@
+// ESP32 Epoch Clock
+// (C)2021 bekki.jp
+// Utilities
+
+// Include ----------------------
+#include "i2c_util.h"
+
+#include <driver/i2c.h>
+
+// #define SDA // 黄
+// #define SCL // 緑
+
+namespace I2CUtil {
+
+void Initialize(const gpio_num_t sdaPin, const gpio_num_t sclPin) {
+  constexpr i2c_port_t port = I2C_NUM_0;
+  constexpr i2c_mode_t mode = I2C_MODE_MASTER;
+  constexpr uint32_t i2c_master_feq_hz = 100000;
+
+  i2c_config_t config = {};
+  config.mode = mode;
+  config.sda_io_num = sdaPin;
+  config.scl_io_num = sclPin;
+  config.scl_pullup_en = true;
+  config.sda_pullup_en = true;
+  config.master.clk_speed = i2c_master_feq_hz;
+
+  i2c_param_config(port, &config);
+  i2c_driver_install(port, mode, 0, 0, 0);
+}
+
+}  // namespace I2CUtil
+
+// EOF
