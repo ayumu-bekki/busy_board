@@ -28,8 +28,6 @@ resource/conv.sh
 ### MCP23017  (IOエクスパンダ )
 https://github.com/ayumu-bekki/busy_board/blob/develop/main/mcp23017.h
 
-インプット周りは利用しなかったので今のところ未実装
-
 ### 赤色7セグメントLEDシリアルドライバーモジュール 
 https://github.com/ayumu-bekki/busy_board/blob/develop/main/seg7_led.h
 

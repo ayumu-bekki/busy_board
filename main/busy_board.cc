@@ -93,14 +93,14 @@ BusyBoard::BusyBoard()
   seg7_.DisplayClear();
 
   // I2C通信
-  I2CUtil::Initialize(GPIO_I2C_SDA, GPIO_I2C_SCL);
+  constexpr i2c_port_t i2c_port_no = I2C_NUM_0;
+  I2CUtil::InitializeMaster(i2c_port_no, GPIO_I2C_SDA, GPIO_I2C_SCL);
 
   constexpr uint8_t address = 0x20;
-  constexpr i2c_port_t port = I2C_NUM_0;
-  mcp23017_.Setup(port, address);
+  mcp23017_.Setup(i2c_port_no, address);
   for (int group = 0; group < MCP23017::GPIO_GROUP_NUM; ++group) {
     for (int gpio_no = 0; gpio_no < MCP23017::GPIO_NUM; ++gpio_no) {
-      mcp23017_.SetGpio(group, gpio_no, false, true);
+      mcp23017_.SetOutputGpio(group, gpio_no, false, true);
     }
   }
 
@@ -117,7 +117,7 @@ BusyBoard::BusyBoard()
   constexpr ledc_timer_t LEDC_TIMER = LEDC_TIMER_0;
   pwm_.Initialize(static_cast<ledc_channel_t>(LEDC_CHANNEL_0), LEDC_TIMER,
                   static_cast<gpio_num_t>(GPIO_CURRENT_METER), FREQUENCY);
-  pwm_.SetRate(0.1f);
+  pwm_.SetRate(0.0f);
 }
 
 void BusyBoard::Run() {
@@ -133,10 +133,10 @@ void BusyBoard::Run() {
       seg7_.DisplayClear();
       led_guage_->SetGuage(0);
       flash_->SetFlashType(FlashTask::NONE);
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 1, false);  // Warning
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 2, false);  // Missile 1
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 3, false);  // Missile 2
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 4, false);  // Arcade
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 1, false);  // Warning
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 2, false);  // Missile 1
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 3, false);  // Missile 2
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 4, false);  // Arcade
 
       TickType_t lastWakeTime = xTaskGetTickCount();
       vTaskDelayUntil(&lastWakeTime, 200 / portTICK_PERIOD_MS);
@@ -146,10 +146,10 @@ void BusyBoard::Run() {
       seg7_.DisplayFull();
       led_guage_->SetGuage(10);
       flash_->SetFlashType(FlashTask::ALWAY_ON);
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 1, true);  // Warning
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 2, true);  // Missile 1
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 3, true);  // Missile 2
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 4, true);  // Arcade
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 1, true);  // Warning
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 2, true);  // Missile 1
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 3, true);  // Missile 2
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 4, true);  // Arcade
 
       lastWakeTime = xTaskGetTickCount();
       vTaskDelayUntil(&lastWakeTime, 2000 / portTICK_PERIOD_MS);
@@ -201,14 +201,14 @@ void BusyBoard::Run() {
       }
 
       led_guage_->SetGuage(static_cast<int>(guage_level_));
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 4,
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 4,
                         10.0f <= guage_level_);  // Arcade
 
       if (is_warning_) {
         if (warning_counter_ % 15 == 0) {
           i2s_->Play(I2SSoundMix::SoundInfo(beep2_pcm, beep2_pcm_len));
         }
-        mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 1,
+        mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 1,
                           (warning_counter_ % 2 == 0));  // Warning
         ++warning_counter_;
       } else {
@@ -232,10 +232,10 @@ void BusyBoard::SwitchStatusRobo() {
   power_rate_ = 1.0f;
   power_rate_min_ = 0.2f;
   seg7_.SetNumber(0);
-  mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 1, false);  // Warning
-  mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 2, is_on_missile_0_);  // Missile 0
-  mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 3, is_on_missile_1_);  // Missile 1
-  mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 4, false);             // Arcade
+  mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 1, false);  // Warning
+  mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 2, is_on_missile_0_);  // Missile 0
+  mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 3, is_on_missile_1_);  // Missile 1
+  mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 4, false);             // Arcade
   flash_->SetFlashType(FlashTask::NONE);
   guage_level_ = 0.0f;
   SetGuegeTarget();
@@ -302,18 +302,18 @@ void BusyBoard::OnButtonWarning() {
   if (status_ == STATUS_NORMAL) {
     if (is_warning_) {
       flash_->SetFlashType(FlashTask::NONE);
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 1, false);  // Warning
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 1, false);  // Warning
       is_warning_ = false;
     } else {
       flash_->SetFlashType(FlashTask::ALWAY_ON);
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 1, true);  // Warning
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 1, true);  // Warning
       is_warning_ = true;
     }
   } else if (status_ == STATUS_ROBO) {
     if (is_warning_) {
       SetWarningTarget();
       is_warning_ = false;
-      mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 1, false);  // Warning
+      mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 1, false);  // Warning
     }
   }
 
@@ -363,19 +363,27 @@ void BusyBoard::OnSelecterPos1() {
 void BusyBoard::OnButtonMissile0() {
   ESP_LOGI(TAG, "On Missile0");
   is_on_missile_0_ = true;
-  mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 2, true);  // Missile 1
+  mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 2, true);  // Missile 1
+
+  if (status_ == STATUS_NORMAL) {
+    pwm_.SetRate(0.1f);
+  }
 }
 
 void BusyBoard::OffButtonMissile0() {
   ESP_LOGI(TAG, "Off Missile0");
   is_on_missile_0_ = false;
-  mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 2, false);  // Missile 1
+  mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 2, false);  // Missile 1
+
+  if (status_ == STATUS_NORMAL) {
+    pwm_.SetRate(0.0f);
+  }
 }
 
 void BusyBoard::OnButtonMissile1() {
   ESP_LOGI(TAG, "On Missile1");
   is_on_missile_1_ = true;
-  mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 3, true);  // Missile 2
+  mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 3, true);  // Missile 2
 
   SetGuegeTarget();
 }
@@ -383,7 +391,7 @@ void BusyBoard::OnButtonMissile1() {
 void BusyBoard::OffButtonMissile1() {
   ESP_LOGI(TAG, "Off Missile1");
   is_on_missile_1_ = false;
-  mcp23017_.SetGpio(MCP23017::GPIO_GROUP_A, 3, false);  // Missile 2
+  mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 3, false);  // Missile 2
 
   SetGuegeTarget();
 }

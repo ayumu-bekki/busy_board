@@ -6,10 +6,12 @@
 
 // Include ----------------------
 #include <driver/gpio.h>
+#include <driver/i2c.h>
 
 namespace I2CUtil {
 
-void Initialize(const gpio_num_t sdaPin, const gpio_num_t sclPin);
+void InitializeMaster(const i2c_port_t port, const gpio_num_t sdaPin,
+                      const gpio_num_t sclPin);
 
 }  // namespace I2CUtil
 

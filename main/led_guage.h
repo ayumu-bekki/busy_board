@@ -55,7 +55,7 @@ class LedGuage
 
     for (int i = 0; i < 10; ++i) {
       const bool is_enable = i < level;
-      mcp23017_->SetGpio(GPIO_TABLE[i][0], GPIO_TABLE[i][1], is_enable, true);
+      mcp23017_->SetOutputGpio(GPIO_TABLE[i][0], GPIO_TABLE[i][1], is_enable, true);
       //ESP_LOGI(TAG, "LED Guage Lv:%d group:%d io:%d status:%s", i, GPIO_TABLE[i][0], GPIO_TABLE[i][1], is_enable ? "O" : "X");
     }
     level_ = level;

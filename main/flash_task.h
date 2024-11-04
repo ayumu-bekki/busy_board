@@ -65,7 +65,7 @@ class FlashTask final : public Task {
 
  private:
   void SetFlash(bool is_on) {
-    mcp23017_->SetGpio(MCP23017::GPIO_GROUP_A, 0, is_on);  // Flash LED
+    mcp23017_->SetOutputGpio(MCP23017::GPIO_GROUP_A, 0, is_on);  // Flash LED
   }
 
  private:
