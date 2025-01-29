@@ -70,6 +70,9 @@ class BusyBoard {
   //  B6 Guage 7
   //  B7 Guage 8
 
+  static constexpr int AUTO_POWER_OFF_SEC = 300;
+  static constexpr int WARNING_COUNTER_POWER_OFF_LIMIT_SEC = 15;
+
  public:
   BusyBoard();
   ~BusyBoard() {}
@@ -100,6 +103,8 @@ class BusyBoard {
   void OnButtonArcade4();
   void OnButtonArcade5();
 
+  void Shutdown();
+
  private:
   GpioInputWatchTask gpio_watcher_;
   MCP23017 mcp23017_;
@@ -119,8 +124,10 @@ class BusyBoard {
   bool is_guage_max;
 
   bool is_warning_;
-  int warning_counter_;
-  int warning_target_;
+  int  warning_counter_;
+  int  warning_target_;
+
+  int  power_off_counter_;
 
   bool is_on_start_fn_;
   bool is_emargency_;

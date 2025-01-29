@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include "esp_random.h"
+#include "esp_sleep.h"
 #include "sounds/sounds.h"
 
 BusyBoard::BusyBoard()
@@ -26,6 +27,7 @@ BusyBoard::BusyBoard()
       is_warning_(false),
       warning_counter_(0),
       warning_target_(0),
+      power_off_counter_(0),
       is_on_start_fn_(false),
       is_emargency_(false),
       is_on_missile_0_(false),
@@ -128,6 +130,11 @@ void BusyBoard::Run() {
       } else {
         seg7_.DisplayClear();
       }
+
+      ++power_off_counter_;
+      if ((AUTO_POWER_OFF_SEC * 10) <= power_off_counter_) {
+        Shutdown();
+      }
     } else if (status_ == STATUS_BOOT) {
       pwm_.SetRate(0.0f);
       seg7_.DisplayClear();
@@ -211,6 +218,10 @@ void BusyBoard::Run() {
         mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 1,
                           (warning_counter_ % 2 == 0));  // Warning
         ++warning_counter_;
+
+        if ((WARNING_COUNTER_POWER_OFF_LIMIT_SEC * 10) <= warning_counter_) {
+            Shutdown();
+        }
       } else {
         if (warning_target_ == warning_counter_) {
           is_warning_ = true;
@@ -241,6 +252,7 @@ void BusyBoard::SwitchStatusRobo() {
   SetGuegeTarget();
   led_guage_->SetGuage(guage_level_);
   is_warning_ = false;
+
   SetWarningTarget();
 }
 
@@ -280,7 +292,9 @@ void BusyBoard::OnButtonEmergency() {
 
   is_emargency_ = true;
 
-  if (status_ == STATUS_ROBO) {
+  if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+  } else if (status_ == STATUS_ROBO) {
     SetGuegeTarget();
     i2s_->Play(I2SSoundMix::SoundInfo(emargency_on_pcm, emargency_on_pcm_len));
   }
@@ -291,7 +305,9 @@ void BusyBoard::OffButtonEmergency() {
 
   is_emargency_ = false;
 
-  if (status_ == STATUS_ROBO) {
+  if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+  } else if (status_ == STATUS_ROBO) {
     SetGuegeTarget();
     i2s_->Play(
         I2SSoundMix::SoundInfo(emargency_off_pcm, emargency_off_pcm_len));
@@ -300,6 +316,8 @@ void BusyBoard::OffButtonEmergency() {
 
 void BusyBoard::OnButtonWarning() {
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+
     if (is_warning_) {
       flash_->SetFlashType(FlashTask::NONE);
       mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 1, false);  // Warning
@@ -325,6 +343,8 @@ void BusyBoard::OnButtonStartFn() {
   is_on_start_fn_ = true;
 
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+
     // boot可能かチェックする
     if (!is_emargency_ &&     // EmargencyはOFF
         is_on_missile_0_ &&   // MS0はON
@@ -366,6 +386,7 @@ void BusyBoard::OnButtonMissile0() {
   mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 2, true);  // Missile 1
 
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
     pwm_.SetRate(0.1f);
   }
 }
@@ -376,6 +397,7 @@ void BusyBoard::OffButtonMissile0() {
   mcp23017_.SetOutputGpio(MCP23017::GPIO_GROUP_A, 2, false);  // Missile 1
 
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
     pwm_.SetRate(0.0f);
   }
 }
@@ -402,6 +424,8 @@ void BusyBoard::OnButtonArcade0() {
     return;
   }
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+
     if (is_pos0_selector_) {
       i2s_->Play(I2SSoundMix::SoundInfo(cat_pcm, cat_pcm_len));
     } else {
@@ -424,6 +448,8 @@ void BusyBoard::OnButtonArcade1() {
     return;
   }
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+
     if (is_pos0_selector_) {
       i2s_->Play(I2SSoundMix::SoundInfo(dog_pcm, dog_pcm_len));
     } else {
@@ -446,6 +472,8 @@ void BusyBoard::OnButtonArcade2() {
     return;
   }
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+
     if (is_pos0_selector_) {
       i2s_->Play(I2SSoundMix::SoundInfo(sheep_pcm, sheep_pcm_len));
     } else {
@@ -468,6 +496,8 @@ void BusyBoard::OnButtonArcade3() {
     return;
   }
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+
     if (is_pos0_selector_) {
       i2s_->Play(I2SSoundMix::SoundInfo(hourse_pcm, hourse_pcm_len));
     } else {
@@ -490,6 +520,8 @@ void BusyBoard::OnButtonArcade4() {
     return;
   }
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+
     if (is_pos0_selector_) {
       i2s_->Play(I2SSoundMix::SoundInfo(cuculus_pcm, cuculus_pcm_len));
     } else {
@@ -512,6 +544,8 @@ void BusyBoard::OnButtonArcade5() {
     return;
   }
   if (status_ == STATUS_NORMAL) {
+    power_off_counter_ = 0;
+
     if (is_pos0_selector_) {
       i2s_->Play(I2SSoundMix::SoundInfo(elephant_pcm, elephant_pcm_len));
     } else {
@@ -530,4 +564,17 @@ void BusyBoard::OnButtonArcade5() {
       i2s_->Play(I2SSoundMix::SoundInfo(beep_pcm, beep_pcm_len));
     }
   }
+}
+
+
+void BusyBoard::Shutdown() {
+  ESP_LOGI(TAG, "Shutdown");
+
+  pwm_.SetRate(0.0f);
+  seg7_.DisplayClear();
+  led_guage_->SetGuage(0);
+  flash_->SetFlashType(FlashTask::NONE);
+  mcp23017_.Clear();
+
+  esp_deep_sleep_start(); // パワーオフ
 }
